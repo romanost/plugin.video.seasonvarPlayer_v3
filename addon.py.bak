@@ -11,19 +11,19 @@ import os
 import sys
 import re
 import json
-import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
-import urllib.parse
+import urllib
+import urllib2
+import urlparse
 import xbmcgui
 import xbmcplugin
 import xbmcaddon
-import html.parser
+import HTMLParser
 from collections import OrderedDict
 from bs4 import BeautifulSoup
 
 base_url = sys.argv[0]
 addon_handle = int(sys.argv[1])
-args = urllib.parse.parse_qs(sys.argv[2][1:])
+args = urlparse.parse_qs(sys.argv[2][1:])
 site_url="http://seasonvar.ru"
 thumbs_url="http://cdn.seasonvar.ru/oblojka/" ## +id.jpg
 pl_url=site_url+"/playls2/"                   ## +secure+x/trans/+id+/list.xml
@@ -39,7 +39,7 @@ xbmcplugin.setContent(addon_handle, 'movies')
 
 items=[]
 
-class myHTML(html.parser.HTMLParser):
+class myHTML(HTMLParser.HTMLParser):
     act=False
     ser=False
     stab=False
@@ -90,10 +90,10 @@ def log(str,lvl="NOTICE"):
     print(output)
 
 def build_url(query):
-    return base_url + '?' + urllib.parse.urlencode(query)
+    return base_url + '?' + urllib.urlencode(query)
 
 def get_site(s_url):
-    return urllib.request.urlopen(s_url).read()
+    return urllib2.urlopen(s_url).read()
 
 def get_file(fname):
     f=open(fname,'r')
@@ -149,9 +149,9 @@ def parse_playlist(plurl):
 #         add_link(slink,sname,serid)
         
     for one in parsed['playlist']:
-        if 'file' in one:
+        if one.has_key('file'):
             plist.append(one)
-        elif 'playlist' in one:
+        elif one.has_key('playlist'):
             for two in one['playlist']:
                 plist.append(two)
     return plist
@@ -171,9 +171,9 @@ elif mode[0] == 'search':
     kkbd=xbmc.Keyboard("", "Search for:",False)
     kkbd.doModal()
     if (kkbd.isConfirmed()):
-        ktext=str(kkbd.getText(),"utf-8")
+        ktext=unicode(kkbd.getText(),"utf-8")
         ktext=ktext.encode('utf-8')
-        ksrch=urllib.parse.quote_plus(ktext)
+        ksrch=urllib.quote_plus(ktext)
         kurl=srch_url+ksrch
         page=get_site(kurl)
         parsed=json.loads(page)
@@ -200,7 +200,7 @@ elif mode[0] == 'browse':
     #log("Start browse")
     parse()
     #log("Looping")
-    for ltrs,q in list(mysite.biglist.items()):
+    for ltrs,q in mysite.biglist.items():
         url=build_url({'mode':'letter', 'letter':ltrs, 'page':0})
         add_link(url,ltrs,0,True)
     endoflist()
